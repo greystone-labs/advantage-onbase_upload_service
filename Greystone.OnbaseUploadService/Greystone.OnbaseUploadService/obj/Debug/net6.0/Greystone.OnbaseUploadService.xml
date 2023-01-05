@@ -1,0 +1,214 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Greystone.OnbaseUploadService</name>
+    </assembly>
+    <members>
+        <member name="M:Greystone.OnbaseUploadService.Controllers.DocumentsController.GetDocumentLastModified(System.Int64)">
+            <summary>
+            Retrieve the last modified date for the document with the OnBase <paramref name="documentId"/>
+            </summary>
+            <param name="documentId">The OnBase document id of the document for which the last modified date is being requested</param>
+            <returns>the last modified date of the document</returns>
+            <response code="200">Returns the last modified date for the requested file</response>
+            <response code="403">If the API key does not match configured</response>
+            <response code="404">If the document with the provided <paramref name="documentId"/> is not present in OnBase</response>
+        </member>
+        <member name="M:Greystone.OnbaseUploadService.Controllers.DocumentsController.DeleteDocument(System.Int64)">
+            <summary>
+            Delete a document in OnBase with the given documentId
+            </summary>
+            <param name="documentId">The OnBase document id of the document which will be deleted</param>
+            <returns>204 if accepted, 404 if no document, 503 if service could not authenticate</returns>
+            <response code="204">The document was deleted successfully</response>
+            <response code="403">If the API key does not match configured</response>
+            <response code="404">The document with the given document id could not be found</response>
+            <response code="503">The current OnBase user does not have the ability to delete the target document</response>
+        </member>
+        <member name="M:Greystone.OnbaseUploadService.Controllers.DocumentsController.Index(System.Int64,Greystone.OnbaseUploadService.Models.Dto.Documents.DocumentIndex)">
+             <summary>
+             Re-index the provided with the provided OnBase <paramref name="documentId"/>
+             </summary>
+             <remarks>
+             For the document with the given id, attempt to re-index the document
+            
+             This will replace all existing keywords for the given document.
+             </remarks>
+             <example>
+             POST /Documents/123/Index
+             {
+             "documentTypeName": "Loans",
+             "keywords": {
+            		"keywordOne": "Value"
+            		"keywordTwo": ["Value1", "Value2"]
+            		}
+             }
+             </example>
+             <param name="documentId">the OnBase id of the OnBase document that will be re-indexed</param>
+             <param name="documentIndex">the properties that will go into re-indexing the document</param>
+             <returns></returns>
+             <response code="204">The document was successfully re-indexed</response>
+             <response code="403">If the API key does not match configured</response>
+             <response code="404">The document with the given document id does not exist, or the desired document type does not exist</response>
+             <response code="403">The configured service user does not have permission to reindex the given document</response>
+        </member>
+        <member name="M:Greystone.OnbaseUploadService.Controllers.DocumentTypesController.GetDocumentTypes">
+            <summary>
+            Queries OnBase for all of the document type groups that the current
+            user has access to
+            </summary>
+            <remarks>
+            The user in question will be the user who has been configured in the web
+            configuration file.
+            </remarks>
+            <returns>the list of document types the user has access to</returns>
+            <response code="200">The doc types that the user has access to</response>
+            <response code="403">The provided API key does not match the configured API key</response>
+            <response code="404">The configured user has no document types available</response>
+            <response code="500">the server was unable to get the document types, with reasons</response>
+        </member>
+        <member name="M:Greystone.OnbaseUploadService.Controllers.RootController.Get">
+            <summary>
+            health check endpoint
+            </summary>
+            <returns>204 if success, any 4xx or 5xx if not available</returns>
+        </member>
+        <member name="M:Greystone.OnbaseUploadService.Controllers.UploadController.CreateUploadTask(Greystone.OnbaseUploadService.Models.Dto.Upload.DocumentUploadIndex)">
+             <summary>
+             Create a new upload job
+             </summary>
+             <remarks>
+             This method starts a new OnBase API upload job. After specifying a document type name
+            
+             Additionally, this method will check to see if the user has the access required to insert
+             a document into this document type
+            
+             The FileCount parameter is critical here. The File Count is the number of files which will comprise
+             an OB Document. If at the commit time the number of files indicated in the upload job is not the same
+             as specified in this request, the upload will fail until the count matches.
+             
+             </remarks>
+             <param name="documentUploadIndex">the properties that should be associated with this document</param>
+             <returns>an id that will be used to continue the upload</returns>
+             <response code="200">an upload job is created for this document</response>
+             <response code="403">the provided API key does not match the one configured on the server</response>
+             <response code="404">the requested document type could not be found in OnBase</response>
+             <response code="503">the configured OnBase user does not have access to create a document of the specified type</response>
+        </member>
+        <member name="M:Greystone.OnbaseUploadService.Controllers.UploadController.UploadDocument(System.Guid,System.Int32,Microsoft.AspNetCore.Http.IFormFile)">
+            <summary>
+            Upload a file for an upload job. Index is 0-based
+            </summary>
+            <remarks>
+            This method appends a file to a provided upload job in a specified index.
+            </remarks>
+            <param name="uploadId">The id of the upload job provided by /create which this document will be associated with</param>
+            <param name="index">the index (location) where the provided file should be placed in the created document</param>
+            <param name="document">the file that will be appended to the document at the given position</param>
+            <returns>status code 200 if successful, or erroneous status code if failed</returns>
+            <response code="200">the given file was appended to the document</response>
+            <response code="400">the provided index is out of valid range</response>
+            <response code="403">there is no API key provided or the API key does not match one configured on the server</response>
+            <response code="404">the provided upload id does not exist</response>
+            <response code="500">an unknown error has prevented the document from being appended</response>
+        </member>
+        <member name="M:Greystone.OnbaseUploadService.Controllers.UploadController.UploadDocument(System.Guid,System.Int32,Greystone.OnbaseUploadService.Database.Models.ChunkedUploadRequestModel)">
+            <summary>
+            starts a file upload using the chunked upload protocol.
+            </summary>
+            <remarks>
+            In the request the user should indicate the size of the file and the file name, the api
+            will then respond with the number of chunks required and the size that each chunk should be
+            </remarks>
+            <param name="uploadId">The id of the upload job provided by /create which this document will be associated with</param>
+            <param name="index">the index (location) where the provided file should be placed in the created document</param>
+            <param name="chunkedRequest">metadata about the document that will be uploaded</param>
+            <response code="200">the given file was appended to the document</response>
+            <response code="400">the provided index is out of valid range</response>
+            <response code="403">there is no API key provided or the API key does not match one configured on the server</response>
+            <response code="404">the provided upload id does not exist</response>
+            <response code="500">an unknown error has prevented the document from being appended</response>
+        </member>
+        <member name="M:Greystone.OnbaseUploadService.Controllers.UploadController.UploadDocumentChunk(System.Guid,System.Int32,System.Int32,Microsoft.AspNetCore.Http.IFormFile)">
+            <summary>
+            place a chunk of the designated file index on the server
+            </summary>
+            <remarks>
+            this endpoint places a chunk of the file designated by the index parameter on the server.
+            The chunk will be added to the final file in the order of the chunk index parameter
+            </remarks>
+            <remarks>
+            for the chunk parameter, the file name and mime type should match the file name and mime type
+            that was originally sent to the server
+            </remarks>
+            <param name="uploadId">The id of the upload job provided by /create which this document will be associated with</param>
+            <param name="index">the index (location) where the provided file should be placed in the created document</param>
+            <param name="chunkIndex">the index (location) where this particular chunk data should appear in the final file</param>
+            <param name="chunk">the data that will be added to the final file</param>
+            <returns></returns>
+        </member>
+        <member name="M:Greystone.OnbaseUploadService.Controllers.UploadController.Commit(System.Guid)">
+            <summary>
+            Commit an upload ID to OnBase and create a document
+            </summary>
+            <remarks>
+            When creating a document in OnBase, workflow will not be started on the document
+            </remarks>
+            <param name="uploadId">The id of the upload job that will be committed to OnBase</param>
+            <returns></returns>
+            <response code="200">The document was created in OnBase and the job has been deleted</response>
+            <response code="404">A job with the given upload id could not be found</response>
+            <response code="400">
+            a known error has occurred during the upload, reasons are provided. This could be due to
+            keyword formatting or permissions.
+            </response>
+            <response code="500">An unexpected error has occurred while uploading the document to OnBase</response>
+        </member>
+        <member name="M:Greystone.OnbaseUploadService.Controllers.UploadController.Delete(System.Guid)">
+            <summary>
+            Delete an upload job
+            </summary>
+            <param name="uploadId">the id of the upload that will be deleted</param>
+            <returns></returns>
+            <response code="200">The upload job was successfully deleted</response>
+            <response code="403">No provided API key or the API key did not match one configured</response>
+            <response code="404">The given upload job was not found</response>
+            <response code="500">An unexpected error has occurred while deleting the upload job</response>
+        </member>
+        <member name="P:Greystone.OnbaseUploadService.Models.Dto.Documents.DocumentIndex.Keywords">
+             <summary>
+             this field can either be a string, or a list of strings
+            
+             string | string[]
+             </summary>
+        </member>
+        <member name="P:Greystone.OnbaseUploadService.Models.Dto.Upload.DocumentUploadIndex.FileCount">
+            <summary>
+            The number of files which will comprise the document in OnBase
+            </summary>
+        </member>
+        <member name="T:Greystone.OnbaseUploadService.Services.SessionManagement.IRentedSession">
+            <summary>
+            Rented session provides a mechanism for using a give-and-take connection style for
+            unity sessions.
+            On dispose, the session should be returned to availability 
+            </summary>
+        </member>
+        <member name="P:Greystone.OnbaseUploadService.Services.SessionManagement.IRentedSession.UnityApplication">
+            <summary>
+            An authenticated ready to use unity session
+            </summary>
+        </member>
+        <member name="T:Greystone.OnbaseUploadService.Services.SessionManagement.IUnitySessionService">
+            <summary>
+            Provides a mechanism to "rent" an OnBase session for use during a single transaction.
+            </summary>
+        </member>
+        <member name="M:Greystone.OnbaseUploadService.Services.SessionManagement.IUnitySessionService.RentConnection">
+            <summary>
+            request a new unity client session
+            </summary>
+            <returns>A rented session, or an exception if a connection could not be made</returns>
+        </member>
+    </members>
+</doc>
