@@ -31,6 +31,7 @@ public class SessionFactory : ISessionFactory
 		};
 
 		var application = Application.Connect(authenticationProperties);
+
 		return application;
 	}
 }

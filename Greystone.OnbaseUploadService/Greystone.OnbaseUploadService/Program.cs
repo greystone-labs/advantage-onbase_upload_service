@@ -17,7 +17,6 @@ services.AddControllers();
 
 services.AddDbContext<OnbaseUploadServiceDbContext>(
 	cfg => cfg.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 services.AddOnBaseSessionManagement().AddFileLocking();
 
 services.AddScoped<IKeywordService, KeywordService>();
