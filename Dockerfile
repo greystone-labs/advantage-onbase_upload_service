@@ -1,4 +1,5 @@
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build-env
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 WORKDIR /App
 
 # Copy everything
