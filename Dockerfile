@@ -36,6 +36,7 @@ ENV ASPNETCORE_URLS=http://+:9090 \
 	ASPNETCORE_ENVIRONMENT=Development \
 	DOTNET_EnableDiagnostics=0
 
+EXPOSE 9090
 # RUN dotnet ef database update
 CMD ["dotnet", "Greystone.OnbaseUploadService.dll", "--no-launch-profile"]
 

@@ -1,0 +1,19 @@
+version: '3.7' # circleci only compatible up to 3.2
+# podman run -p 9090:9090 --net advantage_greystone --network-alias onbase --rm onbase-upload 
+# dotnet Greystone.OnbaseUploadService.dll --urls=http://0.0.0.0:9090 --environment Development --no-launch-profile
+networks:
+  greystone:
+services:
+  onbase:
+    build: .
+    environment:
+      OnBaseAuthentication:Url: "${OnBaseAuthenticationUrl}"
+      OnBaseAuthentication:Username: "${OnBaseAuthenticationUsername}"
+      OnBaseAuthentication:Password: "${OnBaseAuthenticationPassword}"
+      OnBaseAuthentication:DataSource: "${OnBaseAuthenticationDataSource}"
+    volumes:
+      - .:/app
+    networks:
+      greystone:
+    ports:
+      - 9090:9090
